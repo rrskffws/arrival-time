@@ -226,7 +226,7 @@ button{
 </div>
 
 <div class="hint">
-「なし」の場合、この時刻を基準人物の出発時間として使用します。
+「出発」の場合、この時刻を基準人物の出発時間として使用します。
 </div>
 
 
@@ -271,7 +271,7 @@ button{
   value="0"
   checked
 >
-なし
+出発
 </label>
 
 <label>
@@ -431,6 +431,8 @@ function parseDuration(value){
     return NaN;
   }
 
+  /* 数字だけなら秒 */
+
   if(/^\d+$/.test(value)){
     return Number(value);
   }
@@ -511,7 +513,7 @@ function getInputSeconds(){
 
 
 /* =========================
-   時刻表示
+   秒 → HH:MM:SS
 ========================= */
 
 function formatTime(total){
@@ -540,7 +542,7 @@ function formatTime(total){
 function rallyText(seconds){
 
   if(seconds === 0){
-    return "なし";
+    return "出発";
   }
 
   if(seconds === 60){
@@ -674,15 +676,17 @@ function calculate(){
 
 
   /*
-    「なし」がある場合
-    最初の「なし」の人物を基準人物にする。
+    「出発」がある場合
+
+    最初の「出発」の人物を
+    基準人物にする。
 
     基準人物の出発時間
     ＋ 基準人物の行軍時間
     ＝ 全員の到着時間
   */
 
-  const noRallyPeople =
+  const departurePeople =
     people.filter(
       person => person.rally === 0
     );
@@ -691,10 +695,10 @@ function calculate(){
   let commonArrival = null;
 
 
-  if(noRallyPeople.length > 0){
+  if(departurePeople.length > 0){
 
     const basePerson =
-      noRallyPeople[0];
+      departurePeople[0];
 
     commonArrival =
       baseTime + basePerson.march;
@@ -726,8 +730,8 @@ function calculate(){
 
 
     /*
-      集結時間「なし」
-      
+      「出発」の場合
+
       共通到着時間
       − 行軍時間
       ＝ 出発時間
@@ -740,9 +744,10 @@ function calculate(){
 
     }
 
+
     /*
-      集結時間あり
-      
+      1分・5分の場合
+
       到着時間
       − 集結時間
       − 行軍時間
