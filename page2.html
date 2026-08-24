@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="ja">
+
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>出征時間計算</title>
 
 <style>
@@ -14,7 +16,7 @@ body{
   margin:0;
   background:#f4f4f5;
   color:#18181b;
-  font-family:system-ui,sans-serif;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 main{
@@ -32,8 +34,8 @@ main{
 }
 
 h1{
-  font-size:19px;
-  margin:0 0 12px;
+  font-size:20px;
+  margin:0 0 14px;
 }
 
 .utc{
@@ -46,6 +48,7 @@ h1{
   display:block;
   font-size:12px;
   color:#71717a;
+  margin-bottom:3px;
 }
 
 label{
@@ -67,17 +70,15 @@ button{
 
 button{
   background:#18181b;
-  color:white;
+  color:#fff;
   font-weight:700;
   cursor:pointer;
 }
 
 .secondary{
-  background:white;
+  background:#fff;
   color:#18181b;
 }
-
-/* 時刻入力 */
 
 .time-inputs{
   display:grid;
@@ -97,20 +98,17 @@ button{
   font-weight:bold;
 }
 
-/* 名前・行軍時間 */
-
 .row{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:8px;
 }
 
-/* 人物一覧 */
-
 .item{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:8px;
   border-top:1px solid #eee;
   padding:9px 0;
 }
@@ -119,12 +117,17 @@ button{
   border-top:0;
 }
 
-.remove{
-  width:auto;
-  min-height:34px;
+.item-info{
+  min-width:0;
+  word-break:break-word;
 }
 
-/* 結果 */
+.remove{
+  width:auto;
+  min-width:55px;
+  min-height:34px;
+  flex-shrink:0;
+}
 
 .result{
   white-space:pre-wrap;
@@ -134,6 +137,7 @@ button{
   padding:11px;
   font-family:monospace;
   line-height:1.7;
+  font-size:15px;
 }
 
 .empty{
@@ -149,13 +153,16 @@ button{
 }
 
 @media(max-width:430px){
-
   .row{
     grid-template-columns:1fr;
   }
 
+  .utc{
+    font-size:25px;
+  }
 }
 </style>
+
 </head>
 
 <body>
@@ -172,18 +179,14 @@ button{
 
 <small>現在のUTC時刻</small>
 
-<span id="now">
---:--:--
-</span>
-
- UTC
+<span id="now">--:--:--</span> UTC
 
 </div>
 
 <button
   id="setNow"
   class="secondary"
-  style="margin-top:8px"
+  style="margin-top:10px;"
 >
 現在のUTCを到着時間に設定
 </button>
@@ -195,9 +198,7 @@ button{
 
 <section class="card">
 
-<label>
-到着時間（UTC）
-</label>
+<label>到着時間（UTC）</label>
 
 <div class="time-inputs">
 
@@ -238,13 +239,12 @@ button{
 
 <div>
 
-<label>
-名前
-</label>
+<label>名前</label>
 
 <input
   id="name"
-  placeholder="Aさん"
+  type="text"
+  placeholder="新生超絶勇者様"
 >
 
 </div>
@@ -252,14 +252,13 @@ button{
 
 <div>
 
-<label>
-行軍時間
-</label>
+<label>行軍時間</label>
 
 <input
   id="march"
+  type="text"
   inputmode="numeric"
-  placeholder="15秒"
+  placeholder="4545"
 >
 
 </div>
@@ -269,7 +268,7 @@ button{
 
 <button
   id="add"
-  style="margin-top:10px"
+  style="margin-top:10px;"
 >
 追加
 </button>
@@ -302,7 +301,6 @@ button{
 到着時間を設定してください。
 </div>
 
-
 <div class="actions">
 
 <button id="calc">
@@ -315,11 +313,10 @@ button{
 
 </div>
 
-
 <button
   id="clear"
   class="secondary"
-  style="margin-top:8px"
+  style="margin-top:8px;"
 >
 全削除
 </button>
@@ -338,7 +335,7 @@ const $ = id =>
 
 
 /* =========================
-   UTC
+   UTC現在時刻
 ========================= */
 
 function getUTC(){
@@ -353,13 +350,11 @@ function getUTC(){
 
 }
 
-
 function pad(n){
 
   return String(n).padStart(2,"0");
 
 }
-
 
 function updateUTC(){
 
@@ -369,7 +364,6 @@ function updateUTC(){
     `${pad(h)}:${pad(m)}:${pad(s)}`;
 
 }
-
 
 updateUTC();
 
@@ -392,40 +386,33 @@ function setCurrentUTC(){
 
 }
 
-
 $("setNow").onclick =
   setCurrentUTC;
 
 
 /* =========================
-   行軍時間
+   行軍時間を秒に変換
 ========================= */
 
 function parseDuration(value){
 
   value =
     String(value)
-    .trim()
-    .replace(/\s+/g,"");
-
+      .trim()
+      .replace(/\s+/g,"");
 
   if(!value){
     return NaN;
   }
 
-
   /* 数字だけなら秒 */
 
   if(/^\d+$/.test(value)){
-
     return Number(value);
-
   }
-
 
   let minutes = 0;
   let seconds = 0;
-
 
   const m =
     value.match(/(\d+)分/);
@@ -433,32 +420,19 @@ function parseDuration(value){
   const s =
     value.match(/(\d+)秒/);
 
-
   if(m){
-
-    minutes =
-      Number(m[1]);
-
+    minutes = Number(m[1]);
   }
-
 
   if(s){
-
-    seconds =
-      Number(s[1]);
-
+    seconds = Number(s[1]);
   }
-
 
   if(!m && !s){
-
     return NaN;
-
   }
 
-
   return minutes * 60 + seconds;
-
 }
 
 
@@ -469,11 +443,8 @@ function parseDuration(value){
 function formatDuration(seconds){
 
   if(seconds < 60){
-
     return `${seconds}秒`;
-
   }
-
 
   const minutes =
     Math.floor(seconds / 60);
@@ -481,21 +452,16 @@ function formatDuration(seconds){
   const sec =
     seconds % 60;
 
-
   if(sec === 0){
-
     return `${minutes}分`;
-
   }
 
-
   return `${minutes}分${sec}秒`;
-
 }
 
 
 /* =========================
-   到着時間
+   到着時間を秒に変換
 ========================= */
 
 function getArrivalSeconds(){
@@ -509,44 +475,33 @@ function getArrivalSeconds(){
   const s =
     Number($("ss").value);
 
-
   if(
     !Number.isInteger(h) ||
     h < 0 ||
     h > 23
   ){
-
     return null;
-
   }
-
 
   if(
     !Number.isInteger(m) ||
     m < 0 ||
     m > 59
   ){
-
     return null;
-
   }
-
 
   if(
     !Number.isInteger(s) ||
     s < 0 ||
     s > 59
   ){
-
     return null;
-
   }
-
 
   return h * 3600 +
          m * 60 +
          s;
-
 }
 
 
@@ -560,21 +515,16 @@ function formatTime(total){
     ((total % 86400) + 86400) %
     86400;
 
-
   const h =
     Math.floor(total / 3600);
 
   const m =
-    Math.floor(
-      (total % 3600) / 60
-    );
+    Math.floor((total % 3600) / 60);
 
   const s =
     total % 60;
 
-
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
-
 }
 
 
@@ -586,19 +536,18 @@ function escapeHTML(text){
 
   return text.replace(
     /[&<>"']/g,
+    function(c){
 
-    c => ({
+      return {
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+      }[c];
 
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#39;"
-
-    }[c])
-
+    }
   );
-
 }
 
 
@@ -611,32 +560,26 @@ function renderPeople(){
   const list =
     $("list");
 
-
   if(people.length === 0){
 
-    list.className =
-      "empty";
+    list.className = "empty";
 
     list.textContent =
       "登録された人物はありません。";
 
     return;
-
   }
-
 
   list.className = "";
 
-
   list.innerHTML =
     people.map(
-      (person,index) => {
+      function(person,index){
 
         return `
-
         <div class="item">
 
-          <span>
+          <div class="item-info">
 
             <strong>
               ${escapeHTML(person.name)}
@@ -644,8 +587,7 @@ function renderPeople(){
 
             　${formatDuration(person.march)}
 
-          </span>
-
+          </div>
 
           <button
             class="secondary remove"
@@ -655,35 +597,34 @@ function renderPeople(){
           </button>
 
         </div>
-
         `;
 
       }
     ).join("");
 
-
   list
     .querySelectorAll(".remove")
-    .forEach(button => {
+    .forEach(
+      function(button){
 
-      button.onclick = () => {
+        button.onclick =
+          function(){
 
-        const index =
-          Number(
-            button.dataset.index
-          );
+            const index =
+              Number(
+                button.dataset.index
+              );
 
+            people.splice(index,1);
 
-        people.splice(index,1);
+            renderPeople();
 
-        renderPeople();
+            calculate();
 
-        calculate();
+          };
 
-      };
-
-    });
-
+      }
+    );
 }
 
 
@@ -692,9 +633,8 @@ function renderPeople(){
 ========================= */
 
 /*
-   到着時間
-   − 行軍時間
-   ＝ 出征時間
+  到着時間 − 行軍時間
+  ＝ 出征時間
 */
 
 function calculate(){
@@ -702,46 +642,39 @@ function calculate(){
   const arrival =
     getArrivalSeconds();
 
-
   if(arrival === null){
 
     $("out").textContent =
       "到着時間を設定してください。";
 
     return;
-
   }
 
-
-  const lines = [];
-
-
-  people.forEach(person => {
-
-    const departure =
-      arrival - person.march;
-
-
-    lines.push(
-      `${person.name} → ${formatTime(departure)}`
-    );
-
-  });
-
-
-  if(lines.length === 0){
+  if(people.length === 0){
 
     $("out").textContent =
       "人物を追加してください。";
 
     return;
-
   }
 
+  const lines = [];
+
+  people.forEach(
+    function(person){
+
+      const departure =
+        arrival - person.march;
+
+      lines.push(
+        `${person.name} → ${formatTime(departure)}`
+      );
+
+    }
+  );
 
   $("out").textContent =
     lines.join("\n");
-
 }
 
 
@@ -749,101 +682,88 @@ function calculate(){
    時刻入力
 ========================= */
 
-["hh","mm","ss"].forEach(id => {
+["hh","mm","ss"].forEach(
+  function(id){
 
-  $(id).addEventListener(
-    "input",
-    () => {
+    $(id).addEventListener(
+      "input",
+      function(){
 
-      $(id).value =
-        $(id).value
-        .replace(/\D/g,"")
-        .slice(0,2);
+        $(id).value =
+          $(id).value
+            .replace(/\D/g,"")
+            .slice(0,2);
 
+        calculate();
 
-      calculate();
+      }
+    );
 
-    }
-  );
-
-});
+  }
+);
 
 
 /* =========================
-   追加
+   人物追加
 ========================= */
 
-$("add").onclick = () => {
+$("add").onclick =
+  function(){
 
-  const name =
-    $("name").value.trim();
+    const name =
+      $("name").value.trim();
 
+    const march =
+      parseDuration(
+        $("march").value
+      );
 
-  const march =
-    parseDuration(
-      $("march").value
-    );
+    if(
+      getArrivalSeconds() === null
+    ){
 
+      alert(
+        "到着時間を正しく入力してください。"
+      );
 
-  if(
-    getArrivalSeconds() === null
-  ){
+      return;
+    }
 
-    alert(
-      "到着時間を正しく入力してください。"
-    );
+    if(!name){
 
-    return;
+      alert(
+        "名前を入力してください。"
+      );
 
-  }
+      return;
+    }
 
+    if(
+      !Number.isFinite(march) ||
+      march < 0
+    ){
 
-  if(!name){
+      alert(
+        "行軍時間を入力してください。"
+      );
 
-    alert(
-      "名前を入力してください。"
-    );
+      return;
+    }
 
-    return;
+    people.push({
+      name:name,
+      march:march
+    });
 
-  }
+    $("name").value = "";
+    $("march").value = "";
 
+    renderPeople();
 
-  if(
-    !Number.isFinite(march) ||
-    march < 0
-  ){
+    calculate();
 
-    alert(
-      "行軍時間を入力してください。"
-    );
-
-    return;
-
-  }
-
-
-  people.push({
-
-    name:name,
-
-    march:march
-
-  });
-
-
-  $("name").value = "";
-
-  $("march").value = "";
-
-
-  renderPeople();
-
-  calculate();
-
-  $("name").focus();
-
-};
+    $("name").focus();
+  };
 
 
 /* =========================
@@ -858,15 +778,16 @@ $("calc").onclick =
    全削除
 ========================= */
 
-$("clear").onclick = () => {
+$("clear").onclick =
+  function(){
 
-  people.length = 0;
+    people.length = 0;
 
-  renderPeople();
+    renderPeople();
 
-  calculate();
+    calculate();
 
-};
+  };
 
 
 /* =========================
@@ -874,7 +795,7 @@ $("clear").onclick = () => {
 ========================= */
 
 $("copy").onclick =
-  async () => {
+  async function(){
 
     try{
 
@@ -882,22 +803,21 @@ $("copy").onclick =
         $("out").textContent
       );
 
-
       const button =
         $("copy");
-
 
       button.textContent =
         "コピーしました";
 
+      setTimeout(
+        function(){
 
-      setTimeout(() => {
+          button.textContent =
+            "コピー";
 
-        button.textContent =
-          "コピー";
-
-      },1200);
-
+        },
+        1200
+      );
 
     }catch{
 
@@ -910,7 +830,9 @@ $("copy").onclick =
   };
 
 
-/* 初期表示 */
+/* =========================
+   初期化
+========================= */
 
 renderPeople();
 
@@ -919,4 +841,5 @@ setCurrentUTC();
 </script>
 
 </body>
+
 </html>
