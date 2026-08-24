@@ -98,6 +98,10 @@ button{
   gap:8px
 }
 
+.radio{
+  grid-template-columns:1fr 1fr 1fr;
+}
+
 .radio label{
   border:1px solid #ccc;
   border-radius:8px;
@@ -152,6 +156,10 @@ button{
 @media(max-width:430px){
   .row{
     grid-template-columns:1fr
+  }
+
+  .radio{
+    grid-template-columns:1fr 1fr 1fr;
   }
 }
 </style>
@@ -235,7 +243,12 @@ button{
 <div class="radio">
 
 <label>
-<input type="radio" name="rally" value="60" checked>
+<input type="radio" name="rally" value="0" checked>
+なし
+</label>
+
+<label>
+<input type="radio" name="rally" value="60">
 1分
 </label>
 
@@ -378,6 +391,7 @@ function parseDuration(value){
   }
 
   /* 数字だけなら秒 */
+
   if(/^\d+$/.test(value)){
     return Number(value);
   }
@@ -476,14 +490,20 @@ function formatTime(total){
 
 
 /* =========================
-   集結時間
+   集結時間表示
 ========================= */
 
 function rallyText(seconds){
 
-  return seconds === 60
-    ? "1分"
-    : "5分";
+  if(seconds === 0){
+    return "なし";
+  }
+
+  if(seconds === 60){
+    return "1分";
+  }
+
+  return "5分";
 
 }
 
@@ -593,9 +613,7 @@ function calculate(){
 
 
   const lines = [
-
     `${formatTime(arrival)} UTC`
-
   ];
 
 
@@ -605,6 +623,7 @@ function calculate(){
       到着時間
       − 集結時間
       − 行軍時間
+      ＝ 出征時間
     */
 
     const startTime =
