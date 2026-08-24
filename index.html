@@ -19,7 +19,13 @@ button{background:#18181b;color:white;font-weight:700;cursor:pointer}.secondary{
 <body><main>
 <section class="card"><h1>到着時間計算</h1><div class="utc"><small>現在のUTC時刻</small><span id="now">--:--:--</span> UTC</div></section>
 <section class="card">
-<label>到着時間（UTC）</label><input id="arrival" type="time" step="1"><div class="hint">現在UTCから設定</div>
+<label>到着時間（UTC）</label><div class="time-inputs">
+  <input id="hh" type="text" inputmode="numeric" maxlength="2" placeholder="時">
+  <span>:</span>
+  <input id="mm" type="text" inputmode="numeric" maxlength="2" placeholder="分">
+  <span>:</span>
+  <input id="ss" type="text" inputmode="numeric" maxlength="2" placeholder="秒">
+</div><div class="hint">現在UTCから設定</div>
 <div class="row"><div><label>名前</label><input id="name"></div><div><label>行軍時間</label><input id="march" inputmode="numeric"></div></div>
 <label>集結時間</label><div class="radio">
 <label><input type="radio" name="r" value="60" checked> 1分</label>
