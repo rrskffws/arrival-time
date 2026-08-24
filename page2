@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>出征時間計算</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f4f5;
+  color: #18181b;
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  max-width: 560px;
+  margin: auto;
+  padding: 14px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 19px;
+  margin: 0 0 12px;
+}
+
+.utc {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.utc small {
+  display: block;
+  font-size: 12px;
+  color: #71717a;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 10px 0 5px;
+}
+
+input,
+button {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+}
+
+button {
+  background: #18181b;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary {
+  background: white;
+  color: #18181b;
+}
+
+.time-inputs {
+  display: grid;
+  grid-template-columns: 1fr 15px 1fr 15px 1fr;
+  gap: 5px;
+  align-items: center;
+}
+
+.time-inputs input {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.time-inputs span {
+  text-align: center;
+  font-weight: bold;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.radio {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.radio label {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 11px;
+  text-align: center;
+  margin: 0;
+}
+
+.radio input {
+  width: auto;
+  min-height: 0;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #eee;
+  padding: 9px 0;
+}
+
+.item:first-child {
+  border-top: 0;
+}
+
+.remove {
+  width: auto;
+  min-height: 34px;
+}
+
+.result {
+  white-space: pre-wrap;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 11px;
+  font-family: monospace;
+  line-height: 1.7;
+}
+
+.empty {
+  color: #777;
+  font-size: 14px;
+}
+
+@media (max-width: 430px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<!-- 現在のUTC -->
+<section class="card">
+
+<h1>出征時間計算</h1>
+
+<div class="utc">
+  <small>現在のUTC時刻</small>
+  <span id="now">--:--:--</span> UTC
+</div>
+
+<button
+  id="setNow"
+  class="secondary"
+  style="margin-top:8px">
+  現在のUTCを出征時間に設定
+</button>
+
+</section>
+
+
+<!-- 出征時間 -->
+<section class="card">
+
+<label>出征時間（UTC）</label>
+
+<div class="time-inputs">
+
+<input
+  id="hh"
+  type="text"
+  inputmode="numeric"
+  maxlength="2"
+  placeholder="時">
+
+<span>:</span>
+
+<input
+  id="mm"
+  type="text"
+  inputmode="numeric"
+  maxlength="2"
+  placeholder="分">
+
+<span>:</span>
+
+<input
+  id="ss"
+  type="text"
+  inputmode="numeric"
+  maxlength="2"
+  placeholder="秒">
+
+</div>
+
+
+<!-- 名前・行軍時間 -->
+
+<div class="row">
+
+<div>
+<label>名前</label>
+<input id="name">
+</div>
+
+<div>
+<label>行軍時間</label>
+<input
+  id="march"
+  inputmode="numeric"
+  placeholder="例：15秒">
+</div>
+
+</div>
+
+
+<!-- 集結時間 -->
+
+<label>集結時間</label>
+
+<div class="radio">
+
+<label>
+<input
+  type="radio"
+  name="rally"
+  value="60"
+  checked>
+1分
+</label>
+
+<label>
+<input
+  type="radio"
+  name="rally"
+  value="300">
+5分
+</label>
+
+</div>
+
+
+<button
+  id="add"
+  style="margin-top:10px">
+  追加
+</button>
+
+</section>
+
+
+<!-- 登録者 -->
+
+<section class="card">
+
+<div id="list" class="empty">
+登録された人物はありません。
+</div>
+
+</section>
+
+
+<!-- 結果 -->
+
+<section class="card">
+
+<div id="out" class="result">
+出征時間を設定してください。
+</div>
+
+<div
+  style="display:grid;
+         grid-template-columns:1fr 1fr;
+         gap:8px;
+         margin-top:8px">
+
+<button id="calc">
+再計算
+</button>
+
+<button id="copy">
+コピー
+</button>
+
+</div>
+
+<button
+  id="clear"
+  class="secondary"
+  style="margin-top:8px">
+全削除
+</button>
+
+</section>
+
+</main>
+
+
+<script>
+
+const people = [];
+
+const $ = id => document.getElementById(id);
+
+
+/* =========================
+   現在UTC
+========================= */
+
+function getUTC() {
+
+  const d = new Date();
+
+  return [
+    d.getUTCHours(),
+    d.getUTCMinutes(),
+    d.getUTCSeconds()
+  ];
+
+}
+
+function pad(n) {
+
+  return String(n).padStart(2, "0");
+
+}
+
+function updateUTC() {
+
+  const [h, m, s] = getUTC();
+
+  $("now").textContent =
+    `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+}
+
+updateUTC();
+
+setInterval(updateUTC, 1000);
+
+
+/* =========================
+   現在UTCを出征時間へ
+========================= */
+
+function setCurrentUTC() {
+
+  const [h, m, s] = getUTC();
+
+  $("hh").value = pad(h);
+  $("mm").value = pad(m);
+  $("ss").value = pad(s);
+
+  calculate();
+
+}
+
+$("setNow").onclick = setCurrentUTC;
+
+
+/* =========================
+   行軍時間を秒に変換
+========================= */
+
+function parseDuration(value) {
+
+  value = String(value)
+    .trim()
+    .replace(/\s+/g, "");
+
+  if (!value) {
+    return NaN;
+  }
+
+  // 数字だけなら秒
+  if (/^\d+$/.test(value)) {
+    return Number(value);
+  }
+
+  let minutes = 0;
+  let seconds = 0;
+
+  const m = value.match(/(\d+)分/);
+  const s = value.match(/(\d+)秒/);
+
+  if (m) {
+    minutes = Number(m[1]);
+  }
+
+  if (s) {
+    seconds = Number(s[1]);
+  }
+
+  if (!m && !s) {
+    return NaN;
+  }
+
+  return minutes * 60 + seconds;
+}
+
+
+/* =========================
+   秒を表示
+========================= */
+
+function formatDuration(seconds) {
+
+  if (seconds < 60) {
+    return `${seconds}秒`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+
+  if (sec === 0) {
+    return `${minutes}分`;
+  }
+
+  return `${minutes}分${sec}秒`;
+}
+
+
+/* =========================
+   出征時間を秒に変換
+========================= */
+
+function getDepartureSeconds() {
+
+  const h = Number($("hh").value);
+  const m = Number($("mm").value);
+  const s = Number($("ss").value);
+
+  if (
+    !Number.isInteger(h) ||
+    h < 0 ||
+    h > 23
+  ) {
+    return null;
+  }
+
+  if (
+    !Number.isInteger(m) ||
+    m < 0 ||
+    m > 59
+  ) {
+    return null;
+  }
+
+  if (
+    !Number.isInteger(s) ||
+    s < 0 ||
+    s > 59
+  ) {
+    return null;
+  }
+
+  return h * 3600 + m * 60 + s;
+}
+
+
+/* =========================
+   秒 → 時刻
+========================= */
+
+function formatTime(total) {
+
+  total =
+    ((total % 86400) + 86400) % 86400;
+
+  const h =
+    Math.floor(total / 3600);
+
+  const m =
+    Math.floor((total % 3600) / 60);
+
+  const s =
+    total % 60;
+
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+
+/* =========================
+   集結時間表示
+========================= */
+
+function rallyText(seconds) {
+
+  return seconds === 60
+    ? "1分"
+    : "5分";
+}
+
+
+/* =========================
+   HTMLエスケープ
+========================= */
+
+function escapeHTML(text) {
+
+  return text.replace(
+    /[&<>"']/g,
+    c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c])
+  );
+
+}
+
+
+/* =========================
+   人物一覧
+========================= */
+
+function renderPeople() {
+
+  const list = $("list");
+
+  if (people.length === 0) {
+
+    list.className = "empty";
+
+    list.textContent =
+      "登録された人物はありません。";
+
+    return;
+  }
+
+  list.className = "";
+
+  list.innerHTML =
+    people.map((person, index) => {
+
+      return `
+        <div class="item">
+
+          <span>
+            <strong>
+              ${escapeHTML(person.name)}
+            </strong>
+            　${formatDuration(person.march)}
+            /${rallyText(person.rally)}
+          </span>
+
+          <button
+            class="secondary remove"
+            data-index="${index}">
+            削除
+          </button>
+
+        </div>
+      `;
+
+    }).join("");
+
+
+  list
+    .querySelectorAll(".remove")
+    .forEach(button => {
+
+      button.onclick = () => {
+
+        const index =
+          Number(button.dataset.index);
+
+        people.splice(index, 1);
+
+        renderPeople();
+
+        calculate();
+
+      };
+
+    });
+
+}
+
+
+/* =========================
+   計算
+========================= */
+
+function calculate() {
+
+  const departure =
+    getDepartureSeconds();
+
+  if (departure === null) {
+
+    $("out").textContent =
+      "出征時間を設定してください。";
+
+    return;
+  }
+
+
+  const lines = [
+
+    `出征時間：${formatTime(departure)} UTC`
+
+  ];
+
+
+  people.forEach(person => {
+
+    /*
+      出征時間
+      − 集結時間
+      − 行軍時間
+      =
+      集結開始時間
+    */
+
+    const startTime =
+      departure
+      - person.rally
+      - person.march;
+
+
+    lines.push(
+      `${person.name}　${formatDuration(person.march)}　${rallyText(person.rally)}　→　${formatTime(startTime)}`
+    );
+
+  });
+
+
+  $("out").textContent =
+    lines.join("\n");
+}
+
+
+/* =========================
+   時刻入力
+========================= */
+
+["hh", "mm", "ss"].forEach(id => {
+
+  $(id).addEventListener(
+    "input",
+    () => {
+
+      $(id).value =
+        $(id).value
+          .replace(/\D/g, "")
+          .slice(0, 2);
+
+      calculate();
+
+    }
+  );
+
+});
+
+
+/* =========================
+   追加
+========================= */
+
+$("add").onclick = () => {
+
+  const name =
+    $("name").value.trim();
+
+  const march =
+    parseDuration(
+      $("march").value
+    );
+
+
+  const rally =
+    Number(
+      document.querySelector(
+        'input[name="rally"]:checked'
+      ).value
+    );
+
+
+  if (
+    getDepartureSeconds() === null
+  ) {
+
+    alert(
+      "出征時間を正しく入力してください。"
+    );
+
+    return;
+  }
+
+
+  if (!name) {
+
+    alert(
+      "名前を入力してください。"
+    );
+
+    return;
+  }
+
+
+  if (
+    !Number.isFinite(march) ||
+    march < 0
+  ) {
+
+    alert(
+      "行軍時間を入力してください。"
+    );
+
+    return;
+  }
+
+
+  people.push({
+
+    name: name,
+
+    march: march,
+
+    rally: rally
+
+  });
+
+
+  $("name").value = "";
+  $("march").value = "";
+
+
+  renderPeople();
+
+  calculate();
+
+  $("name").focus();
+
+};
+
+
+/* =========================
+   再計算
+========================= */
+
+$("calc").onclick =
+  calculate;
+
+
+/* =========================
+   全削除
+========================= */
+
+$("clear").onclick = () => {
+
+  people.length = 0;
+
+  renderPeople();
+
+  calculate();
+
+};
+
+
+/* =========================
+   コピー
+========================= */
+
+$("copy").onclick = async () => {
+
+  try {
+
+    await navigator.clipboard.writeText(
+      $("out").textContent
+    );
+
+
+    const button =
+      $("copy");
+
+    button.textContent =
+      "コピーしました";
+
+
+    setTimeout(() => {
+
+      button.textContent =
+        "コピー";
+
+    }, 1200);
+
+
+  } catch {
+
+    alert(
+      "コピーできませんでした。"
+    );
+
+  }
+
+};
+
+
+/* =========================
+   初期設定
+========================= */
+
+renderPeople();
+
+setCurrentUTC();
+
+</script>
+
+</body>
+</html>
