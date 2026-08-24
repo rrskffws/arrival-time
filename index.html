@@ -431,8 +431,6 @@ function parseDuration(value){
     return NaN;
   }
 
-  /* 数字だけなら秒 */
-
   if(/^\d+$/.test(value)){
     return Number(value);
   }
@@ -676,10 +674,8 @@ function calculate(){
 
 
   /*
-    「出発」がある場合
-
-    最初の「出発」の人物を
-    基準人物にする。
+    「出発」がある場合、
+    最初の「出発」の人物を基準人物にする。
 
     基準人物の出発時間
     ＋ 基準人物の行軍時間
@@ -709,13 +705,12 @@ function calculate(){
   const lines = [];
 
 
-  if(commonArrival !== null){
+  /*
+    「出発」がない場合だけ
+    到着時間を表示
+  */
 
-    lines.push(
-      `到着時間 ${formatTime(commonArrival)} UTC`
-    );
-
-  }else{
+  if(commonArrival === null){
 
     lines.push(
       `到着時間 ${formatTime(baseTime)} UTC`
@@ -748,7 +743,7 @@ function calculate(){
     /*
       1分・5分の場合
 
-      到着時間
+      入力した到着時間
       − 集結時間
       − 行軍時間
       ＝ 出発時間
