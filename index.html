@@ -169,8 +169,6 @@ button{
 
 <main>
 
-<!-- 現在のUTC -->
-
 <section class="card">
 
 <h1>出発・到着時間計算ちゅ～る</h1>
@@ -190,8 +188,6 @@ button{
 
 </section>
 
-
-<!-- 出発・到着時間 -->
 
 <section class="card">
 
@@ -230,11 +226,9 @@ button{
 </div>
 
 <div class="hint">
-時 : 分 : 秒
+「なし」の場合、この時刻を基準人物の出発時間として使用します。
 </div>
 
-
-<!-- 名前・行軍時間 -->
 
 <div class="row">
 
@@ -265,8 +259,6 @@ button{
 
 </div>
 
-
-<!-- 集結時間 -->
 
 <label>集結時間</label>
 
@@ -313,8 +305,6 @@ button{
 </section>
 
 
-<!-- 登録人物 -->
-
 <section class="card">
 
 <div
@@ -327,15 +317,13 @@ button{
 </section>
 
 
-<!-- 結果 -->
-
 <section class="card">
 
 <div
   id="out"
   class="result"
 >
-出発・到着時間を設定してください。
+時間を設定してください。
 </div>
 
 <div
@@ -390,13 +378,11 @@ function getUTC(){
 
 }
 
-
 function pad(n){
 
   return String(n).padStart(2,"0");
 
 }
-
 
 function updateUTC(){
 
@@ -445,8 +431,6 @@ function parseDuration(value){
     return NaN;
   }
 
-  /* 数字だけなら秒 */
-
   if(/^\d+$/.test(value)){
     return Number(value);
   }
@@ -454,11 +438,8 @@ function parseDuration(value){
   let minutes = 0;
   let seconds = 0;
 
-  const m =
-    value.match(/(\d+)分/);
-
-  const s =
-    value.match(/(\d+)秒/);
+  const m = value.match(/(\d+)分/);
+  const s = value.match(/(\d+)秒/);
 
   if(m){
     minutes = Number(m[1]);
@@ -503,36 +484,24 @@ function formatDuration(seconds){
 
 
 /* =========================
-   出発・到着時間を秒に変換
+   入力時間
 ========================= */
 
-function getArrivalSeconds(){
+function getInputSeconds(){
 
   const h = Number($("hh").value);
   const m = Number($("mm").value);
   const s = Number($("ss").value);
 
-  if(
-    !Number.isInteger(h) ||
-    h < 0 ||
-    h > 23
-  ){
+  if(!Number.isInteger(h) || h < 0 || h > 23){
     return null;
   }
 
-  if(
-    !Number.isInteger(m) ||
-    m < 0 ||
-    m > 59
-  ){
+  if(!Number.isInteger(m) || m < 0 || m > 59){
     return null;
   }
 
-  if(
-    !Number.isInteger(s) ||
-    s < 0 ||
-    s > 59
-  ){
+  if(!Number.isInteger(s) || s < 0 || s > 59){
     return null;
   }
 
@@ -542,14 +511,13 @@ function getArrivalSeconds(){
 
 
 /* =========================
-   秒 → HH:MM:SS
+   時刻表示
 ========================= */
 
 function formatTime(total){
 
   total =
-    ((total % 86400) + 86400) %
-    86400;
+    ((total % 86400) + 86400) % 86400;
 
   const h =
     Math.floor(total / 3600);
@@ -610,8 +578,7 @@ function escapeHTML(text){
 
 function renderPeople(){
 
-  const list =
-    $("list");
+  const list = $("list");
 
   if(people.length === 0){
 
@@ -626,61 +593,56 @@ function renderPeople(){
   list.className = "";
 
   list.innerHTML =
-    people.map(
-      (person,index) => {
+    people.map((person,index) => {
 
-        return `
-          <div class="item">
+      const rally =
+        person.rally === 0
+        ? ""
+        : "/" + rallyText(person.rally);
 
-            <span>
-              <strong>
-                ${escapeHTML(person.name)}
-              </strong>
+      return `
+        <div class="item">
 
-              ${formatDuration(person.march)}
+          <span>
+            <strong>
+              ${escapeHTML(person.name)}
+            </strong>
 
-              ${
-                person.rally === 0
-                ? ""
-                : "/" + rallyText(person.rally)
-              }
+            ${formatDuration(person.march)}${rally}
 
-            </span>
+          </span>
 
-            <button
-              class="secondary remove"
-              data-index="${index}"
-            >
-              削除
-            </button>
+          <button
+            class="secondary remove"
+            data-index="${index}"
+          >
+            削除
+          </button>
 
-          </div>
-        `;
+        </div>
+      `;
 
-      }
-    ).join("");
+    }).join("");
 
 
   list
     .querySelectorAll(".remove")
-    .forEach(
-      button => {
+    .forEach(button => {
 
-        button.onclick = () => {
+      button.onclick = () => {
 
-          const index =
-            Number(button.dataset.index);
+        const index =
+          Number(button.dataset.index);
 
-          people.splice(index,1);
+        people.splice(index,1);
 
-          renderPeople();
+        renderPeople();
 
-          calculate();
+        calculate();
 
-        };
+      };
 
-      }
-    );
+    });
 
 }
 
@@ -691,67 +653,123 @@ function renderPeople(){
 
 function calculate(){
 
-  const arrival =
-    getArrivalSeconds();
+  const baseTime =
+    getInputSeconds();
 
-  if(arrival === null){
+  if(baseTime === null){
 
     $("out").textContent =
-      "出発・到着時間を設定してください。";
+      "時間を設定してください。";
+
+    return;
+  }
+
+  if(people.length === 0){
+
+    $("out").textContent =
+      "人物を追加してください。";
 
     return;
   }
 
 
-  const lines = [
+  /*
+    「なし」がある場合
+    最初の「なし」の人物を基準人物にする。
 
-    `到着時間 ${formatTime(arrival)} UTC`
+    基準人物の出発時間
+    ＋ 基準人物の行軍時間
+    ＝ 全員の到着時間
+  */
 
-  ];
+  const noRallyPeople =
+    people.filter(
+      person => person.rally === 0
+    );
 
 
-  people.forEach(
-    person => {
+  let commonArrival = null;
 
-      /*
-        到着時間
-        − 集結時間
-        − 行軍時間
-        ＝ 出征時間
-      */
 
-      const startTime =
-        arrival
+  if(noRallyPeople.length > 0){
+
+    const basePerson =
+      noRallyPeople[0];
+
+    commonArrival =
+      baseTime + basePerson.march;
+
+  }
+
+
+  const lines = [];
+
+
+  if(commonArrival !== null){
+
+    lines.push(
+      `到着時間 ${formatTime(commonArrival)} UTC`
+    );
+
+  }else{
+
+    lines.push(
+      `到着時間 ${formatTime(baseTime)} UTC`
+    );
+
+  }
+
+
+  people.forEach(person => {
+
+    let startTime;
+
+
+    /*
+      集結時間「なし」
+      
+      共通到着時間
+      − 行軍時間
+      ＝ 出発時間
+    */
+
+    if(person.rally === 0){
+
+      startTime =
+        commonArrival - person.march;
+
+    }
+
+    /*
+      集結時間あり
+      
+      到着時間
+      − 集結時間
+      − 行軍時間
+      ＝ 出発時間
+    */
+
+    else{
+
+      startTime =
+        baseTime
         - person.rally
         - person.march;
 
-
-      let line;
-
-
-      /* 集結時間が「なし」の場合 */
-
-      if(person.rally === 0){
-
-        line =
-          `${person.name} ${formatDuration(person.march)} → ${formatTime(startTime)}`;
-
-      }
-
-      /* 1分・5分の場合 */
-
-      else{
-
-        line =
-          `${person.name} ${formatDuration(person.march)}/${rallyText(person.rally)} → ${formatTime(startTime)}`;
-
-      }
-
-
-      lines.push(line);
-
     }
-  );
+
+
+    const rally =
+      person.rally === 0
+      ? ""
+      : "/" + rallyText(person.rally);
+
+
+    lines.push(
+      `${person.name} ${formatDuration(person.march)}${rally} → ${formatTime(startTime)}`
+    );
+
+  });
 
 
   $("out").textContent =
@@ -764,25 +782,23 @@ function calculate(){
    時刻入力
 ========================= */
 
-["hh","mm","ss"].forEach(
-  id => {
+["hh","mm","ss"].forEach(id => {
 
-    $(id).addEventListener(
-      "input",
-      () => {
+  $(id).addEventListener(
+    "input",
+    () => {
 
-        $(id).value =
-          $(id).value
-            .replace(/\D/g,"")
-            .slice(0,2);
+      $(id).value =
+        $(id).value
+          .replace(/\D/g,"")
+          .slice(0,2);
 
-        calculate();
+      calculate();
 
-      }
-    );
+    }
+  );
 
-  }
-);
+});
 
 
 /* =========================
@@ -799,7 +815,6 @@ $("add").onclick = () => {
       $("march").value
     );
 
-
   const rally =
     Number(
       document.querySelector(
@@ -808,12 +823,10 @@ $("add").onclick = () => {
     );
 
 
-  if(
-    getArrivalSeconds() === null
-  ){
+  if(getInputSeconds() === null){
 
     alert(
-      "出発・到着時間を正しく入力してください。"
+      "時間を正しく入力してください。"
     );
 
     return;
@@ -846,16 +859,13 @@ $("add").onclick = () => {
   people.push({
 
     name:name,
-
     march:march,
-
     rally:rally
 
   });
 
 
   $("name").value = "";
-
   $("march").value = "";
 
 
@@ -895,43 +905,36 @@ $("clear").onclick = () => {
    コピー
 ========================= */
 
-$("copy").onclick =
-  async () => {
+$("copy").onclick = async () => {
 
-    try{
+  try{
 
-      await navigator.clipboard.writeText(
-        $("out").textContent
-      );
+    await navigator.clipboard.writeText(
+      $("out").textContent
+    );
 
+    const button =
+      $("copy");
 
-      const button =
-        $("copy");
+    button.textContent =
+      "コピーしました";
+
+    setTimeout(() => {
 
       button.textContent =
-        "コピーしました";
+        "コピー";
 
+    },1200);
 
-      setTimeout(
-        () => {
+  }catch{
 
-          button.textContent =
-            "コピー";
+    alert(
+      "コピーできませんでした。"
+    );
 
-        },
-        1200
-      );
+  }
 
-
-    }catch{
-
-      alert(
-        "コピーできませんでした。"
-      );
-
-    }
-
-  };
+};
 
 
 /* =========================
